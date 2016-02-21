@@ -26,6 +26,24 @@ type Transaction struct {
 	closed bool
 }
 
+// CreateTablesIfNotExists has the same behaviour as DbMap.CreateTablesIfNotExists(), but runs in a transaction.
+func (t *Transaction) CreateTablesIfNotExists() error {
+	return t.createTables(true)
+}
+
+func (t *Transaction) createTables(ifNotExists bool) error {
+	var err error
+	for i := range t.dbmap.tables {
+		table := t.dbmap.tables[i]
+		sql := table.SqlForCreate(ifNotExists)
+		_, err = t.Exec(sql)
+		if err != nil {
+			break
+		}
+	}
+	return err
+}
+
 // Insert has the same behavior as DbMap.Insert(), but runs in a transaction.
 func (t *Transaction) Insert(list ...interface{}) error {
 	return insert(t.dbmap, t, list...)
